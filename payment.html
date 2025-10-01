@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Noe - Paiement</title>
+  <style>
+    body{font-family:Inter,Arial;background:#f3f6fb;padding:20px}
+    .card{max-width:700px;margin:auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+    h1{color:#4361ee;margin-bottom:12px}
+    .options{display:flex;gap:16px;margin-top:12px}
+    .option{flex:1;border:1px solid #ddd;padding:12px;border-radius:10px;text-align:center;cursor:pointer}
+    .option.active{border:2px solid #4361ee;background:#f0f4ff}
+    .btn{margin-top:20px;display:inline-block;padding:12px 16px;border:none;border-radius:8px;background:#4361ee;color:#fff;font-weight:700;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Paiement</h1>
+    <p>Choisissez une méthode :</p>
+    <div class="options">
+      <div class="option" id="opt-card">Carte<br><img src="images/visa.jpg" height="20"><img src="images/mastercard.jpg" height="20"></div>
+      <div class="option" id="opt-moncash">MonCash<br><img src="images/Moncash.jpg" height="20"></div>
+      <div class="option" id="opt-cash">Espèces<br><i class="fas fa-money-bill-wave"></i></div>
+    </div>
+    <form style="margin-top:20px">
+      <label>Montant</label>
+      <input type="text" id="amount" readonly>
+      <button class="btn">Procéder au Paiement</button>
+    </form>
+  </div>
+<script>
+  document.querySelectorAll('.option').forEach(o=>o.onclick=()=>{document.querySelectorAll('.option').forEach(x=>x.classList.remove('active'));o.classList.add('active');});
+  const url=new URL(window.location.href);document.getElementById('amount').value=url.searchParams.get('price');
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</body>
+</html>

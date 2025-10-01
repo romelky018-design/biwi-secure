@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Noe - Commande</title>
+  <style>
+    body{font-family:Inter,Arial;background:#f3f6fb;padding:20px}
+    .card{max-width:700px;margin:auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+    h1{color:#4361ee;margin-bottom:12px}
+    label{display:block;margin-top:12px;margin-bottom:4px;font-weight:600}
+    input{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px}
+    .btn{margin-top:20px;display:inline-block;padding:12px 16px;border:none;border-radius:8px;background:#4361ee;color:#fff;font-weight:700;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Commander / Réserver</h1>
+    <form action="payment.html" method="get">
+      <label>Nom</label><input name="name" required>
+      <label>Email</label><input name="email" type="email" required>
+      <label>Adresse</label><input name="address" required>
+      <label>Article</label><input id="item" name="item" readonly>
+      <label>Prix</label><input id="price" name="price" readonly>
+      <button class="btn">Continuer au Paiement</button>
+    </form>
+  </div>
+<script>
+  const url=new URL(window.location.href);
+  const model=url.searchParams.get('model');const price=url.searchParams.get('price');const type=url.searchParams.get('type');
+  document.getElementById('item').value=model;
+  document.getElementById('price').value= type==='car' ? `$${price}/jour` : `${price} G/kg`;
+</script>
+</body>
+</html>

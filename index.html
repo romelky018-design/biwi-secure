@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Noe - Tableau de bord</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* ========== THEME (dark turquoise) ========== */
+    :root{
+      --bg:#0b1220;          /* page background */
+      --sidebar:#0f1720;     /* sidebar background */
+      --panel:#1f2937;       /* cards / panels */
+      --muted:#9aa4b2;       /* secondary text */
+      --accent:#00c2a8;      /* main accent (turquoise) */
+      --accent-2:#05827d;
+      --text:#e6eef8;        /* primary text */
+      --border:#26343a;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,Arial,"Helvetica Neue",Helvetica,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    /* Layout */
+    .app{display:flex;min-height:100vh}
+    /* Sidebar */
+    .sidebar{
+      width:260px;
+      background:linear-gradient(180deg,var(--sidebar),#0b1420);
+      padding:20px;
+      border-right:1px solid rgba(255,255,255,0.02);
+    }
+    .brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .brand h1{font-size:20px;margin:0;color:var(--accent)}
+    .nav{margin-top:10px}
+    .nav button{
+      width:100%;display:flex;align-items:center;gap:12px;padding:10px;border-radius:8px;border:none;
+      background:transparent;color:rgba(255,255,255,0.95);font-weight:600;cursor:pointer;text-align:left;
+    }
+    .nav button:hover{background:rgba(255,255,255,0.02)}
+    .nav button.active{background:linear-gradient(90deg,rgba(0,194,168,0.12),rgba(0,194,168,0.04));border-left:4px solid var(--accent)}
+    .nav i{width:20px;text-align:center}
+
+    /* Main area */
+    .main{flex:1;padding:20px;overflow:auto}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px}
+    .topbar .title h2{margin:0;color:var(--accent)}
+    .topbar .user{display:flex;align-items:center;gap:12px}
+    .avatar{width:44px;height:44px;border-radius:8px;object-fit:cover;border:2px solid rgba(255,255,255,0.03)}
+
+    /* Grid cards */
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:18px}
+    .card{background:var(--panel);padding:14px;border-radius:10px;box-shadow:0 10px 30px rgba(2,6,23,0.5);border:1px solid var(--border)}
+    .card h3{font-size:13px;color:var(--muted);margin-bottom:8px}
+    .card .value{font-size:22px;font-weight:700;color:var(--text)}
+    .card .meta{font-size:12px;color:var(--muted);margin-top:8px}
+
+    /* charts area */
+    .charts{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:18px}
+    .chart-card{background:var(--panel);padding:12px;border-radius:10px;border:1px solid var(--border)}
+    canvas{width:100%!important;height:260px!important}
+
+    /* lists: products / cars */
+    .list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:18px}
+    .item{background:var(--panel);display:flex;gap:12px;padding:12px;border-radius:10px;border:1px solid var(--border);align-items:flex-start}
+    .item img{width:140px;height:90px;object-fit:cover;border-radius:8px;background:#08121a}
+    .meta{flex:1}
+    .meta h4{margin:0 0 6px 0;color:var(--text)}
+    .meta p{margin:0;color:var(--muted);font-size:13px}
+    .price{margin-top:8px;font-weight:800;color:var(--accent)}
+    .btn{display:inline-block;padding:8px 12px;background:var(--accent);color:#00211d;border-radius:8px;font-weight:700;text-decoration:none;margin-top:10px}
+
+    /* clients table */
+    .clients{background:var(--panel);padding:12px;border-radius:10px;border:1px solid var(--border)}
+    table{width:100%;border-collapse:collapse;color:var(--text)}
+    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px}
+    th{color:var(--muted);font-weight:700}
+    .status{padding:6px 10px;border-radius:18px;font-weight:700;font-size:12px}
+    .status.active{background:rgba(0,194,168,0.12);color:var(--accent)}
+    .status.pending{background:rgba(247,37,133,0.12);color:var(--warning)}
+
+    /* params / settings */
+    .settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+    .settings .card{padding:14px}
+    .toggle{position:relative;display:inline-block;width:46px;height:24px}
+    .toggle input{opacity:0;width:0;height:0}
+    .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#374151;border-radius:24px}
+    .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:transform .2s}
+    .toggle input:checked + .slider{background:var(--accent)}
+    .toggle input:checked + .slider:before{transform:translateX(22px)}
+
+    /* service info */
+    .service-info{background:var(--panel);padding:12px;border-radius:10px;border:1px solid var(--border);margin-bottom:18px;color:var(--muted)}
+    .service-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:10px}
+    .service-item{background:transparent;padding:12px;border-radius:8px;text-align:center}
+
+    /* chat */
+    .chat-btn{position:fixed;right:20px;bottom:20px;width:56px;height:56px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#02110f;cursor:pointer;z-index:999}
+    .chat-panel{position:fixed;right:20px;bottom:88px;width:340px;background:var(--panel);border-radius:12px;padding:10px;display:none;flex-direction:column;z-index:999;border:1px solid var(--border)}
+    .chat-panel header{display:flex;justify-content:space-between;align-items:center;color:var(--text);border-bottom:1px solid rgba(255,255,255,0.03);padding-bottom:8px}
+    .chat-messages{max-height:260px;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+    .chat-messages .bot{align-self:flex-start;background:#071a1a;padding:8px;border-radius:8px}
+    .chat-messages .user{align-self:flex-end;background:var(--accent);padding:8px;border-radius:8px;color:#02110f}
+    .chat-panel footer{display:flex;gap:8px;padding-top:8px}
+    .chat-panel input{flex:1;padding:8px;border-radius:8px;border:none;background:transparent;color:var(--text)}
+
+    /* responsive */
+    @media(max-width:1000px){
+      .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:90;transform:translateX(-120%);transition:transform .22s}
+      .sidebar.open{transform:translateX(0)}
+      .main{padding:12px}
+      .charts{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <i class="fas fa-warehouse" style="font-size:22px;color:var(--accent)"></i>
+        <h1>NOE</h1>
+      </div>
+
+      <nav class="nav" role="navigation" aria-label="Main navigation">
+        <button class="active" data-section="dashboard"><i class="fas fa-home"></i> Dashboard</button>
+        <button data-section="loan"><i class="fas fa-car"></i> Prêts Auto</button>
+        <button data-section="poultry"><i class="fas fa-egg"></i> Production Avicole</button>
+        <button data-section="clients"><i class="fas fa-users"></i> Clients</button>
+        <button data-section="reports"><i class="fas fa-chart-bar"></i> Rapports</button>
+        <button data-section="settings"><i class="fas fa-cog"></i> Paramètres</button>
+      </nav>
+
+      <div style="margin-top:18px;font-size:13px;color:var(--muted)">
+        <div><strong>Support</strong></div>
+        <div style="margin-top:6px">support@noe.example</div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main" id="main">
+      <div class="topbar">
+        <div class="title"><h2>Dashboard</h2><small style="color:var(--muted)">Aperçu général</small></div>
+        <div class="user">
+          <div style="text-align:right"><div style="font-weight:700">Admin</div><small style="color:var(--muted)">Dernière connexion : Aujourd'hui</small></div>
+          <img class="avatar" src="https://ui-avatars.com/api/?name=Admin+Noe&background=00c2a8&color=fff" alt="Admin">
+        </div>
+      </div>
+
+      <!-- ========== DASHBOARD SECTION (kept content, colors updated) ========== -->
+      <section id="dashboard-content" class="content-section active">
+        <!-- top cards -->
+        <div class="cards">
+          <div class="card">
+            <h3>Prêts Approuvés</h3>
+            <div class="value">17,400.00 G</div>
+            <div class="meta">Total ce mois</div>
+          </div>
+
+          <div class="card">
+            <h3>Prêts en Attente</h3>
+            <div class="value">2,700.00 G</div>
+            <div class="meta">En traitement</div>
+          </div>
+
+          <div class="card">
+            <h3>Production Mensuelle (Œufs)</h3>
+            <div class="value">14,000</div>
+            <div class="meta">Total production</div>
+          </div>
+
+          <div class="card">
+            <h3>Bénéfice Net</h3>
+            <div class="value">45,000 G</div>
+            <div class="meta">Ce mois</div>
+          </div>
+        </div>
+
+        <!-- charts -->
+        <div class="charts">
+          <div class="chart-card">
+            <h3>Évolution Prêts & Revenus</h3>
+            <canvas id="financeChart"></canvas>
+          </div>
+
+          <div class="chart-card">
+            <h3>Répartition des Services</h3>
+            <canvas id="serviceChart"></canvas>
+          </div>
+        </div>
+
+        <div class="service-info">
+          <h4 style="margin:0;color:var(--accent)">Résumé des services</h4>
+          <p style="margin-top:8px;color:var(--muted)">Plateforme gérant prêts auto et production avicole — réservation rapide, suivi des clients et rapports détaillés.</p>
+
+          <div class="service-grid" style="margin-top:12px">
+            <div class="service-item"><i class="fas fa-car-side"></i><div style="margin-top:8px;color:var(--text)">Prêts & Location</div></div>
+            <div class="service-item"><i class="fas fa-egg"></i><div style="margin-top:8px;color:var(--text)">Production Avicole</div></div>
+            <div class="service-item"><i class="fas fa-users"></i><div style="margin-top:8px;color:var(--text)">Clients</div></div>
+            <div class="service-item"><i class="fas fa-chart-line"></i><div style="margin-top:8px;color:var(--text)">Rapports</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== LOAN: Prêts Auto ========== -->
+      <section id="loan-content" class="content-section" style="display:none">
+        <h3 style="color:var(--accent);margin-bottom:12px">Prêts Auto & Location</h3>
+
+        <div class="cards">
+          <div class="card"><h3>Prêts Approuvés</h3><div class="value">17,400.00 G</div><div class="meta">Ce mois</div></div>
+          <div class="card"><h3>Remboursements</h3><div class="value">980.00 G</div><div class="meta">Ce mois</div></div>
+          <div class="card"><h3>Solde de portefeuille</h3><div class="value">1,720.00 G</div><div class="meta">Disponible</div></div>
+        </div>
+
+        <div class="service-info"><h4 style="margin:0;color:var(--accent)">Véhicules disponibles</h4><p style="color:var(--muted);margin-top:8px">Choisissez parmi nos offres — cliquez sur Réserver pour démarrer la commande.</p></div>
+
+        <div class="list">
+          <!-- Toyota -->
+          <div class="item">
+             <img src="images/toyota.jpg" alt="Toyota " alt="Toyota">
+            <div class="meta">
+              <h4>Toyota Corolla 2022</h4>
+              <p>Motorisation 1.8L • Bonne consommation • Garantie 3 ans • Parfaite en ville et route.</p>
+              <div class="price">$40 / jour</div>
+              <a class="btn" href="sell.html?type=car&model=Toyota%20Corolla%202022&price=40">Réserver</a>
+            </div>
+          </div>
+
+          <!-- Hyundai -->
+          <div class="item">
+             <img src="images/hyundai.jpg" alt=" Hyundai"alt="Hyundai">
+            <div class="meta">
+              <h4>Hyundai Accent 2021</h4>
+              <p>Compacte, économique, idéale pour trajets urbains.</p>
+              <div class="price">$70 / jour</div>
+              <a class="btn" href="sell.html?type=car&model=Hyundai%20Accent%202021&price=70">Réserver</a>
+            </div>
+          </div>
+
+          <!-- Mercedes -->
+          <div class="item">
+             <img src="images/mercedes.jpg" alt="Mercedes" alt="Mercedes">
+            <div class="meta">
+              <h4>Mercedes Classe C 2023</h4>
+              <p>Premium, confortable, idéale pour événements et déplacements professionnels.</p>
+              <div class="price">$120 / jour</div>
+              <a class="btn" href="sell.html?type=car&model=Mercedes%20Classe%20C%202023&price=120">Réserver</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="charts">
+          <div class="chart-card"><h3>Évolution des prêts</h3><canvas id="loanChart"></canvas></div>
+          <div class="chart-card"><h3>Type de prêts</h3><canvas id="loanTypeChart"></canvas></div>
+        </div>
+      </section>
+
+      <!-- ========== POULTRY: Production Avicole ========== -->
+      <section id="poultry-content" class="content-section" style="display:none">
+        <h3 style="color:var(--accent);margin-bottom:12px">Production Avicole</h3>
+
+        <div class="cards">
+          <div class="card"><h3>Production Mensuelle</h3><div class="value">14,000 œufs</div><div class="meta">Moyenne</div></div>
+          <div class="card"><h3>Ventes</h3><div class="value">2,700.00 G</div><div class="meta">Ce mois</div></div>
+          <div class="card"><h3>Bénéfice</h3><div class="value">1,720.00 G</div><div class="meta">Ce mois</div></div>
+        </div>
+
+        <div class="service-info"><h4 style="margin:0;color:var(--accent)">Nos produits</h4><p style="color:var(--muted);margin-top:8px">Poulet, Porc, Canard — produits locaux, contrôles qualité réguliers.</p></div>
+
+        <div class="list">
+          <div class="item">
+             <img src="images/chicken.jpg" alt="Poulet Fermier" alt="Poulet">
+            <div class="meta">
+              <h4>Poulet fermier</h4>
+              <p>Élevé en plein air • Poids moyen 1.6–2.2 kg • Saveur naturelle.</p>
+              <div class="price">500 G / kg</div>
+              <a class="btn" href="sell.html?type=product&model=Poulet%20fermier&price=500">Commander</a>
+            </div>
+          </div>
+
+          <div class="item">
+             <img src="images/pigs.jpg" alt=" Cochon" alt="Porc">
+            <div class="meta">
+              <h4>Porc local</h4>
+              <p>Différentes découpes • Viande tendre • Production locale.</p>
+              <div class="price">450 G / kg</div>
+              <a class="btn" href="sell.html?type=product&model=Porc%20local&price=450">Commander</a>
+            </div>
+          </div>
+
+          <div class="item">
+            <img src="images/ducks.jpg" alt="Poulet Fermier" alt="Canard">
+            <div class="meta">
+              <h4>Canard</h4>
+              <p>Élevage soigné • Viande idéale pour plats gastronomiques.</p>
+              <div class="price">620 G / kg</div>
+              <a class="btn" href="sell.html?type=product&model=Canard&price=620">Commander</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="charts">
+          <div class="chart-card"><h3>Production mensuelle</h3><canvas id="productionChart"></canvas></div>
+          <div class="chart-card"><h3>Répartition des ventes</h3><canvas id="salesChart"></canvas></div>
+        </div>
+      </section>
+
+      <!-- ========== CLIENTS (15 entries) ========== -->
+      <section id="clients-content" class="content-section" style="display:none">
+        <h3 style="color:var(--accent);margin-bottom:12px">Clients</h3>
+        <div class="clients">
+          <table>
+            <thead>
+              <tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Service</th><th>Statut</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Jean Pierre</td><td>jean.pierre@email.com</td><td>+509 34 56 7890</td><td>Prêt Auto</td><td><span class="status active">Actif</span></td></tr>
+              <tr><td>Marie Laurent</td><td>marie.laurent@email.com</td><td>+509 36 12 3456</td><td>Production Avicole</td><td><span class="status active">Actif</span></td></tr>
+              <tr><td>Paul Joseph</td><td>paul.joseph@email.com</td><td>+509 37 89 0123</td><td>Prêt Auto</td><td><span class="status pending">En attente</span></td></tr>
+              <tr><td>Sophie Desir</td><td>sophie.desir@email.com</td><td>+509 38 45 6789</td><td>Production Avicole</td><td><span class="status active">Actif</span></td></tr>
+              <tr><td>Marc Antoine</td><td>marc.antoine@email.com</td><td>+509 39 01 2345</td><td>Prêt Auto</td><td><span class="status pending">En attente</span></td></tr>
+              <tr><td>Michel Charles</td><td>michel.charles@email.com</td><td>+509 39 22 3344</td><td>Prêt Auto</td><td><span class="status active">Actif</span></td></tr>
+              <tr><td>Louise François</td><td>louise.francois@email.com</td><td>+509 32 55 6677</td><td>Production Avicole</td><td><span class="status pending">En attente</span></td></tr>
+              <tr><td>David Louis</td><td>david.louis@email.com</td><td>+509 33 44 7788</td><td>Prêt Auto</td><td><span class="status active">Actif</span></td></tr>
+              <tr><td>Nadia Monrose</td><td>nadia.monrose@email.com</td><td>+509 31 11 2233</td><td>Production Avicole</td><td><span class="status active">Actif</span></td></tr>
+              <tr><td>Patrick René</td><td>patrick.rene@email.com</td><td>+509 35 66 7788</td><td>Prêt Auto</td><td><span class="status pending">En attente</span></td></tr>
+              <tr><td>Julie Saintil</td><td>julie.saintil@email.com</td><td>+509 36 77 8899</td><td>Production Avicole</td><td><span class="status active">Actif</span></td></tr>
+              <tr><td>Samuel Théodore</td><td>samuel.theodore@email.com</td><td>+509 37 55 6677</td><td>Prêt Auto</td><td><span class="status active">Actif</span></td></tr>
+              <tr><td>Claudine Victor</td><td>claudine.victor@email.com</td><td>+509 34 88 9900</td><td>Production Avicole</td><td><span class="status pending">En attente</span></td></tr>
+              <tr><td>Olivier Henry</td><td>olivier.henry@email.com</td><td>+509 35 22 3344</td><td>Prêt Auto</td><td><span class="status active">Actif</span></td></tr>
+              <tr><td>Karine Dessalines</td><td>karine.dessalines@email.com</td><td>+509 36 33 4455</td><td>Production Avicole</td><td><span class="status active">Actif</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ========== REPORTS ========== -->
+      <section id="reports-content" class="content-section" style="display:none">
+        <h3 style="color:var(--accent);margin-bottom:12px">Rapports & Analyses</h3>
+
+        <div class="cards">
+          <div class="card"><h3>Revenus totaux</h3><div class="value">120,000 G</div><div class="meta">Période sélectionnée</div></div>
+          <div class="card"><h3>Dépenses</h3><div class="value">75,000 G</div><div class="meta">Période sélectionnée</div></div>
+          <div class="card"><h3>Bénéfice net</h3><div class="value">45,000 G</div><div class="meta">Période sélectionnée</div></div>
+          <div class="card"><h3>Nouveaux clients</h3><div class="value">24</div><div class="meta">Ce mois</div></div>
+        </div>
+
+        <div class="charts">
+          <div class="chart-card"><h3>Revenus / Dépenses</h3><canvas id="reportFinanceChart"></canvas></div>
+          <div class="chart-card"><h3>Performance</h3><canvas id="reportPerfChart"></canvas></div>
+        </div>
+
+        <div class="report-card" style="margin-top:12px;background:var(--panel);padding:14px;border-radius:10px;color:var(--muted)">
+          <h4 style="color:var(--accent);margin:0 0 8px 0">Résumé mensuel</h4>
+          <p>Revenus: <strong>120,000 G</strong> • Dépenses: <strong>75,000 G</strong> • Bénéfice net: <strong>45,000 G</strong> • Nouveaux clients: <strong>24</strong></p>
+        </div>
+      </section>
+
+      <!-- ========== SETTINGS / PARAMÈTRES ========== -->
+      <section id="settings-content" class="content-section" style="display:none">
+        <h3 style="color:var(--accent);margin-bottom:12px">Paramètres</h3>
+        <div class="settings">
+          <div class="card">
+            <h4 style="color:var(--accent);margin-bottom:8px">Informations Entreprise</h4>
+            <p><strong>Nom :</strong> Business Institute of the West Indies</p>
+            <p><strong>Devise par défaut :</strong> Gourdes (G)</p>
+            <p><strong>Email support :</strong> support@noe.example</p>
+            <p><strong>Taux conversion (USD→G) :</strong> 1 USD = 150 G</p>
+          </div>
+
+          <div class="card">
+            <h4 style="color:var(--accent);margin-bottom:8px">Notifications & Préférences</h4>
+            <p><label style="display:flex;justify-content:space-between;align-items:center"><span>Email</span><span class="toggle"><input type="checkbox" checked><span class="slider"></span></span></label></p>
+            <p><label style="display:flex;justify-content:space-between;align-items:center"><span>SMS</span><span class="toggle"><input type="checkbox"><span class="slider"></span></span></label></p>
+            <p><label style="display:flex;justify-content:space-between;align-items:center"><span>Facturation auto</span><span class="toggle"><input type="checkbox"><span class="slider"></span></span></label></p>
+            <p><strong>Langue :</strong> Français</p>
+          </div>
+
+          <div class="card">
+            <h4 style="color:var(--accent);margin-bottom:8px">Sécurité</h4>
+            <p><label style="display:flex;justify-content:space-between;align-items:center"><span>2FA</span><span class="toggle"><input type="checkbox" checked><span class="slider"></span></span></label></p>
+            <p><label style="display:flex;justify-content:space-between;align-items:center"><span>Chiffrement</span><span class="toggle"><input type="checkbox" checked><span class="slider"></span></span></label></p>
+            <p><strong>Journal d'activité :</strong> Disponible</p>
+          </div>
+
+          <div class="card">
+            <h4 style="color:var(--accent);margin-bottom:8px">Sauvegarde & Stockage</h4>
+            <p><strong>Sauvegarde automatique :</strong> Activée</p>
+            <p><strong>Dernière sauvegarde :</strong> 12/10/2025</p>
+            <p><strong>Limite stockage :</strong> 2.5 GB / 5 GB</p>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">© 2025 NOE — Business Institute of the West Indies</footer>
+    </main>
+  </div>
+
+  <!-- Chat quick access -->
+  <div class="chat-btn" id="chatBtn" role="button" aria-label="Assistance"><i class="fas fa-comments"></i></div>
+  <div class="chat-panel" id="chatPanel" aria-hidden="true">
+    <header><div><strong>Assistant NOE</strong><br><small style="color:var(--muted)">IA + support humain</small></div><button id="closeChat" style="background:none;border:none;color:var(--text)"><i class="fas fa-times"></i></button></header>
+    <div class="chat-messages" id="chatMessages"><div class="bot">Bonjour ! Je peux aider pour une réservation ou une commande.</div></div>
+    <footer style="display:flex;gap:8px;padding-top:8px"><input id="chatInput" placeholder="Écrire..." aria-label="Message"/><button id="chatSend" class="btn">Envoyer</button></footer>
+  </div>
+
+  <!-- ========== SCRIPTS ========== -->
+  <script>
+    // --- Navigation ---
+    document.querySelectorAll('.nav button').forEach(btn=>{
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+        this.classList.add('active');
+        const sec = this.getAttribute('data-section') + '-content';
+        document.querySelectorAll('.content-section').forEach(c=>c.style.display='none');
+        const el = document.getElementById(sec);
+        if(el) el.style.display='block';
+        // title update
+        document.querySelector('.topbar .title h2').textContent = this.textContent.trim();
+        window.scrollTo({top:0,behavior:'smooth'});
+      });
+    });
+
+    // --- Charts (Chart.js) ---
+    // helper color
+    function hexToRgba(hex,alpha=1){
+      const h = hex.replace('#','');
+      const r = parseInt(h.substring(0,2),16);
+      const g = parseInt(h.substring(2,4),16);
+      const b = parseInt(h.substring(4,6),16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    // financeChart
+    const ctxF = document.getElementById('financeChart').getContext('2d');
+    new Chart(ctxF, {
+      type: 'line',
+      data: {
+        labels: ['Jan','Fév','Mar','Avr','Mai','Jun','Jul'],
+        datasets: [
+          { label: 'Revenus (G)', data: [110000,115000,120000,130000,125000,120000,140000], borderColor: hexToRgba('#00c2a8',1), backgroundColor: hexToRgba('#00c2a8',0.12), tension:0.3, fill:true },
+          { label: 'Dépenses (G)', data: [70000,72000,75000,78000,77000,75000,79000], borderColor: hexToRgba('#f72585',1), backgroundColor: hexToRgba('#f72585',0.08), tension:0.3, fill:true }
+        ]
+      },
+      options:{responsive:true,plugins:{legend:{position:'top'}}}
+    });
+
+    // serviceChart (doughnut)
+    const ctxS = document.getElementById('serviceChart').getContext('2d');
+    new Chart(ctxS, {
+      type:'doughnut',
+      data:{
+        labels:['Prêts Auto','Avicole','Autres'],
+        datasets:[{data:[55,35,10],backgroundColor:[hexToRgba('#00c2a8',1),hexToRgba('#4cc9f0',1),hexToRgba('#4361ee',1)]}]
+      },
+      options:{responsive:true}
+    });
+
+    // loan charts
+    const loanCtx = document.getElementById('loanChart').getContext('2d');
+    new Chart(loanCtx,{type:'line',data:{labels:['Jan','Fév','Mar','Avr','Mai','Jun','Jul'],datasets:[{label:'Prêts approuvés (G)',data:[12000,15000,13000,17000,16000,17400,18000],borderColor:hexToRgba('#00c2a8',1),tension:0.3,fill:false}]},options:{responsive:true}});
+
+    const loanTypeCtx = document.getElementById('loanTypeChart').getContext('2d');
+    new Chart(loanTypeCtx,{type:'doughnut',data:{labels:['Neuves','Occasion','Motos','Utilitaires'],datasets:[{data:[45,35,12,8],backgroundColor:[hexToRgba('#00c2a8',1),hexToRgba('#05827d',1),hexToRgba('#4cc9f0',1),hexToRgba('#f72585',1)]}]},options:{responsive:true}});
+
+    // production and sales
+    const prodCtx = document.getElementById('productionChart').getContext('2d');
+    new Chart(prodCtx,{type:'bar',data:{labels:['Jan','Fév','Mar','Avr','Mai','Jun','Jul'],datasets:[{label:'Œufs produits',data:[12000,12500,13000,13500,13200,14000,14200],backgroundColor:hexToRgba('#4cc9f0',1)}]},options:{responsive:true}});
+
+    const salesCtx = document.getElementById('salesChart').getContext('2d');
+    new Chart(salesCtx,{type:'pie',data:{labels:['Détaillants','Supermarchés','Restaurants','Particuliers'],datasets:[{data:[40,35,15,10],backgroundColor:[hexToRgba('#00c2a8',1),hexToRgba('#05827d',1),hexToRgba('#4cc9f0',1),hexToRgba('#f72585',1)]}]},options:{responsive:true}});
+
+    // reports charts
+    const rF = document.getElementById('reportFinanceChart').getContext('2d');
+    new Chart(rF,{type:'line',data:{labels:['Jan','Fév','Mar','Avr','Mai','Jun','Jul'],datasets:[{label:'Revenus',data:[90000,100000,110000,120000,115000,120000,125000],borderColor:hexToRgba('#00c2a8',1)},{label:'Dépenses',data:[60000,65000,70000,75000,73000,75000,77000],borderColor:hexToRgba('#f72585',1)}]},options:{responsive:true}});
+
+    const rP = document.getElementById('reportPerfChart').getContext('2d');
+    new Chart(rP,{type:'doughnut',data:{labels:['Prêts','Avicole','Autres'],datasets:[{data:[58,32,10],backgroundColor:[hexToRgba('#00c2a8',1),hexToRgba('#4cc9f0',1),hexToRgba('#4361ee',1)]}]},options:{responsive:true}});
+
+    // --- Chat behaviour (simple) ---
+    const chatBtn = document.getElementById('chatBtn');
+    const chatPanel = document.getElementById('chatPanel');
+    const closeChat = document.getElementById('closeChat');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const chatSend = document.getElementById('chatSend');
+
+    chatBtn.addEventListener('click', ()=>{ chatPanel.style.display='flex'; chatPanel.setAttribute('aria-hidden','false'); chatInput.focus(); });
+    closeChat.addEventListener('click', ()=>{ chatPanel.style.display='none'; chatPanel.setAttribute('aria-hidden','true'); });
+
+    function addChat(msg,who='bot'){ const d=document.createElement('div'); d.textContent=msg; d.className=who; chatMessages.appendChild(d); chatMessages.scrollTop = chatMessages.scrollHeight; }
+
+    chatSend.addEventListener('click', ()=>{ const t = chatInput.value.trim(); if(!t) return; addChat(t,'user'); chatInput.value=''; setTimeout(()=> addChat("Merci — un agent vous contactera bientôt. Ou cliquez sur contact pour écrire à support@noe.example"),800); });
+    chatInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter') chatSend.click(); });
+
+    // Ensure initial section visible
+    document.querySelectorAll('.content-section').forEach(s=>s.style.display='none');
+    document.getElementById('dashboard-content').style.display='block';
+
+    // Accessibility: keyboard nav on sidebar
+    document.querySelectorAll('.nav button').forEach(btn=>{
+      btn.addEventListener('keydown', e=>{
+        if(e.key === 'Enter' || e.key === ' ') btn.click();
+      });
+    });
+  </script>
+</body>
+</html>
