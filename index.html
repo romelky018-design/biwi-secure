@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .login-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .dashboard {
+            text-align: center;
+            color: white;
+        }
+
+        .dashboard h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .error-message {
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div class="login-container" id="loginPage">
+        <h1>BIWI Secure Access 🔒</h1>
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" placeholder="Enter username" required>
+            </div>
+            <div class="input-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" placeholder="Enter password" required>
+            </div>
+            <button type="submit" class="login-btn">ENTER</button>
+            <div class="error-message" id="errorMessage">Invalid username or password!</div>
+        </form>
+    </div>
+
+    <!-- Dashboard Page (Hidden by default) -->
+    <div class="dashboard" id="dashboardPage" style="display: none;">
+        <h1>Welcome to Dashboard! 🎉</h1>
+        <p>You have successfully logged in.</p>
+        <p><strong>This is your blank page ready for content.</strong></p>
+        <button class="logout-btn" onclick="logout()">LOGOUT</button>
+    </div>
+
+    <!-- ... all previous HTML and CSS stays the same ... -->
+
+<script>
+    // Allowed users
+    const allowedUsers = [
+        { username: "admin", password: "admin123" },
+        { username: "guest", password: "guest123" }
+    ];
+
+    // Handle form submission
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const errorMessage = document.getElementById('errorMessage');
+        const button = document.querySelector('.login-btn');
+
+        if (username === '' || password === '') {
+            errorMessage.textContent = 'Please fill in both fields!';
+            errorMessage.style.display = 'block';
+            return;
+        }
+
+        const validUser = allowedUsers.find(user =>
+            user.username === username && user.password === password
+        );
+
+        if (!validUser) {
+            errorMessage.textContent = 'Invalid username or password!';
+            errorMessage.style.display = 'block';
+            return;
+        }
+
+        errorMessage.style.display = 'none';
+
+        button.textContent = 'LOGGING IN...';
+        button.style.backgroundColor = '#999';
+
+        // ✅ Redirect to biwi.html after 2 seconds
+        setTimeout(function() {
+            window.location.href = 'biwi.html';
+        }, 2000);
+    });
+
+    // Hide error message on input focus
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.addEventListener('focus', function () {
+            document.getElementById('errorMessage').style.display = 'none';
+        });
+    });
+</script>
+
+</body>
+</html>
